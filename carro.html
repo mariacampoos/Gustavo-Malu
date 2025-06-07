@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Valinhos</title>
+
+  <!-- Fonte moderna -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #fff;
+      position: relative;
+      overflow: hidden;
+      cursor: none;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 40px 20px;
+      background-color: #6A1B9A;
+      color: white;
+      position: relative;
+      z-index: 20;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+      font-weight: 400;
+    }
+
+    header p {
+      margin: 5px 0 0 0;
+      font-weight: 300;
+      font-size: 1.1em;
+    }
+
+    nav.navbar {
+      background-color: #8e24aa;
+      padding: 10px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    nav.navbar .nav-link {
+      color: white;
+      font-weight: 500;
+      text-decoration: none;
+      font-size: 1.1em;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+
+    nav.navbar .nav-link:hover {
+      background-color: #6a1b9a;
+    }
+
+    #car {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 25;
+    }
+
+    #car img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    #finish-line {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 10px;
+      height: 80px;
+      background: repeating-linear-gradient(
+        45deg,
+        #6A1B9A,
+        #6A1B9A 10px,
+        #ffffff 10px,
+        #ffffff 20px
+      );
+      border-radius: 4px;
+      box-shadow: 0 0 10px #6A1B9A;
+      z-index: 20;
+      user-select: none;
+    }
+
+    #start-line {
+      position: fixed;
+      top: 230px;
+      left: 20px;
+      width: 10px;
+      height: 80px;
+      background: repeating-linear-gradient(
+        45deg,
+        #BA68C8,
+        #BA68C8 10px,
+        #ffffff 10px,
+        #ffffff 20px
+      );
+      border-radius: 4px;
+      box-shadow: 0 0 10px #BA68C8;
+      z-index: 20;
+      user-select: none;
+    }
+
+    #message-finish {
+      position: fixed;
+      bottom: 120px;
+      right: 20px;
+      background: #6A1B9A;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 1.3em;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(106, 27, 154, 0.8);
+      opacity: 0;
+      pointer-events: none;
+      user-select: none;
+      z-index: 30;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    #message-finish.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Jogue e Ganhe um Vale</h1>
+    <p>Nosso amor acelera mais forte que qualquer carrinho — e nunca freia</p>
+  </header>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-link">Sobre nós</a>
+  </nav>
+
+  <div id="start-line"></div>
+  <div id="car">
+    <img src="fotos/carrao.png" alt="Carrinho de corrida" />
+  </div>
+  <div id="finish-line"></div>
+  <div id="message-finish"></div>
+
+  <script>
+    const car = document.getElementById('car');
+    const finish = document.getElementById('finish-line');
+    const start = document.getElementById('start-line');
+    const message = document.getElementById('message-finish');
+
+    const carWidth = 60;
+    const carHeight = 60;
+    const velocidade = 5;
+
+    const cupons = [
+      "Vale um cinema! 🍿",
+      "Vale um lanche! 🍔",
+      "Vale abraços Ilimitados! 🤗",
+      "Vale um jantar romântico! 🍝",
+      "Vale uma massagem relaxante! 💆‍♀️",
+      "Vale um passeio surpresa! 🚗",
+      "Vale um café especial! ☕",
+      "Vale uma noite de filme juntos! 🎬",
+      "Vale um pacote de Lay's 😋",
+      "Vale uma partida de Brawl Stars 🎮",
+      "Vale um beijo 😘",
+      "Vale uma barra de Sonho de Valsa 🍫",
+      "Vale qualquer coisa que você quiser fazer ✨"
+];
+
+    let ultimoCupomIndex = -1;
+    let mostrandoMensagem = false;
+    let dentroDaLinha = false;
+
+    // Posição inicial (relacionada à linha de partida)
+    let startRect = start.getBoundingClientRect();
+    let posX = startRect.left + startRect.width / 2;
+    let posY = startRect.top + startRect.height / 2;
+
+    // Define limites
+    const limiteSuperior = startRect.bottom + 20;
+
+    let teclas = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+    function atualizarPosicao() {
+      const x = Math.min(window.innerWidth - carWidth / 2, Math.max(carWidth / 2, posX));
+      const y = Math.min(window.innerHeight - carHeight / 2, Math.max(limiteSuperior, posY));
+
+      car.style.left = (x - carWidth / 2) + 'px';
+      car.style.top = (y - carHeight / 2) + 'px';
+
+      checkFinish(x, y);
+    }
+
+    function moverComTeclado() {
+      if (teclas.ArrowUp) posY -= velocidade;
+      if (teclas.ArrowDown) posY += velocidade;
+      if (teclas.ArrowLeft) posX -= velocidade;
+      if (teclas.ArrowRight) posX += velocidade;
+
+      atualizarPosicao();
+      requestAnimationFrame(moverComTeclado);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key in teclas) teclas[e.key] = true;
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.key in teclas) teclas[e.key] = false;
+    });
+
+    function checkFinish(x, y) {
+      const rect = finish.getBoundingClientRect();
+      const centroX = x;
+      const centroY = y;
+
+      const estaNaLinha = (
+        centroX >= rect.left &&
+        centroX <= rect.right &&
+        centroY >= rect.top &&
+        centroY <= rect.bottom
+      );
+
+      if (estaNaLinha && !dentroDaLinha) {
+        dentroDaLinha = true;
+        showMessage();
+      } else if (!estaNaLinha && dentroDaLinha) {
+        dentroDaLinha = false;
+        hideMessage();
+        resetarPosicao();
+      }
+    }
+
+    function showMessage() {
+      mostrandoMensagem = true;
+      setTimeout(() => {
+        let novoIndex;
+        do {
+          novoIndex = Math.floor(Math.random() * cupons.length);
+        } while (novoIndex === ultimoCupomIndex);
+        ultimoCupomIndex = novoIndex;
+        message.textContent = cupons[novoIndex];
+        message.classList.add('show');
+      }, 300);
+    }
+
+    function hideMessage() {
+      mostrandoMensagem = false;
+      message.classList.remove('show');
+    }
+
+    function resetarPosicao() {
+      startRect = start.getBoundingClientRect();
+      posX = startRect.left + startRect.width / 2;
+      posY = startRect.top + startRect.height / 2;
+      atualizarPosicao();
+    }
+
+    window.addEventListener('resize', () => {
+      startRect = start.getBoundingClientRect();
+      posX = startRect.left + startRect.width / 2;
+      posY = startRect.top + startRect.height / 2;
+      atualizarPosicao();
+    });
+
+    atualizarPosicao();
+    moverComTeclado();
+  </script>
+
+</body>
+</html>
