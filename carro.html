@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Valinhos</title>
 
   <!-- Fonte moderna -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <style>
     body {
@@ -65,12 +65,13 @@
     }
 
     #car {
-      position: absolute;
+      position: fixed; /* fixo para melhor comportamento em mobile */
       width: 60px;
       height: 60px;
       pointer-events: none;
       user-select: none;
       z-index: 25;
+      touch-action: none;
     }
 
     #car img {
@@ -141,6 +142,35 @@
       opacity: 1;
       pointer-events: auto;
     }
+
+    /* Controles para celular */
+    #controls {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      user-select: none;
+      text-align: center;
+    }
+
+    #controls button {
+      font-size: 1.8em;
+      margin: 5px 8px;
+      padding: 10px 15px;
+      background: #8e24aa;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+
+    #controls button:active {
+      background-color: #6a1b9a;
+    }
   </style>
 </head>
 <body>
@@ -155,11 +185,21 @@
   </nav>
 
   <div id="start-line"></div>
+
   <div id="car">
     <img src="fotos/carrao.png" alt="Carrinho de corrida" />
   </div>
+
   <div id="finish-line"></div>
   <div id="message-finish"></div>
+
+  <!-- Controles para celular -->
+  <div id="controls">
+    <button onclick="mover('up')">▲</button><br />
+    <button onclick="mover('left')">◄</button>
+    <button onclick="mover('down')">▼</button>
+    <button onclick="mover('right')">►</button>
+  </div>
 
   <script>
     const car = document.getElementById('car');
@@ -185,7 +225,7 @@
       "Vale um beijo 😘",
       "Vale uma barra de Sonho de Valsa 🍫",
       "Vale qualquer coisa que você quiser fazer ✨"
-];
+    ];
 
     let ultimoCupomIndex = -1;
     let mostrandoMensagem = false;
@@ -196,7 +236,7 @@
     let posX = startRect.left + startRect.width / 2;
     let posY = startRect.top + startRect.height / 2;
 
-    // Define limites
+    // Define limites (limite superior para o carrinho não passar pro header/nav)
     const limiteSuperior = startRect.bottom + 20;
 
     let teclas = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -211,6 +251,24 @@
       checkFinish(x, y);
     }
 
+    // Função para mover via botões no celular
+    function mover(direcao) {
+      if (direcao === 'up') posY -= velocidade;
+      if (direcao === 'down') posY += velocidade;
+      if (direcao === 'left') posX -= velocidade;
+      if (direcao === 'right') posX += velocidade;
+      atualizarPosicao();
+    }
+
+    // Movimento via teclado para desktop
+    document.addEventListener('keydown', e => {
+      if (e.key in teclas) teclas[e.key] = true;
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.key in teclas) teclas[e.key] = false;
+    });
+
     function moverComTeclado() {
       if (teclas.ArrowUp) posY -= velocidade;
       if (teclas.ArrowDown) posY += velocidade;
@@ -220,14 +278,6 @@
       atualizarPosicao();
       requestAnimationFrame(moverComTeclado);
     }
-
-    document.addEventListener('keydown', e => {
-      if (e.key in teclas) teclas[e.key] = true;
-    });
-
-    document.addEventListener('keyup', e => {
-      if (e.key in teclas) teclas[e.key] = false;
-    });
 
     function checkFinish(x, y) {
       const rect = finish.getBoundingClientRect();
