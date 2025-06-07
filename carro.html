@@ -5,49 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Valinhos</title>
 
-  <!-- Fonte moderna -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet" />
-
   <style>
     body {
       margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: #fff;
-      position: relative;
+      font-family: Arial, sans-serif;
       overflow: hidden;
-      cursor: none;
       min-height: 100vh;
+      background: #f0f0f0;
     }
 
     header {
-      padding: 40px 20px;
-      background-color: #6A1B9A;
+      background: #6A1B9A;
       color: white;
-      position: relative;
-      z-index: 20;
       text-align: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 2.5em;
-      font-weight: 400;
-    }
-
-    header p {
-      margin: 5px 0 0 0;
-      font-weight: 300;
-      font-size: 1.1em;
+      padding: 20px;
+      user-select: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
     }
 
     nav.navbar {
+      position: fixed;
+      top: 70px; /* logo + header + margem */
+      left: 0;
+      right: 0;
+      height: 50px;
       background-color: #8e24aa;
-      padding: 10px 20px;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
     }
 
     nav.navbar .nav-link {
@@ -65,21 +55,20 @@
     }
 
     #car {
-      position: fixed; /* fixo para melhor comportamento em mobile */
+      position: fixed;
       width: 60px;
       height: 60px;
-      pointer-events: none;
+      z-index: 101;
       user-select: none;
-      z-index: 25;
-      touch-action: none;
+      /* A posição será atualizada via JS */
     }
 
     #car img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      user-select: none;
       pointer-events: none;
+      user-select: none;
     }
 
     #finish-line {
@@ -97,13 +86,12 @@
       );
       border-radius: 4px;
       box-shadow: 0 0 10px #6A1B9A;
-      z-index: 20;
       user-select: none;
+      z-index: 50;
     }
 
     #start-line {
       position: fixed;
-      top: 230px;
       left: 20px;
       width: 10px;
       height: 80px;
@@ -116,8 +104,9 @@
       );
       border-radius: 4px;
       box-shadow: 0 0 10px #BA68C8;
-      z-index: 20;
       user-select: none;
+      z-index: 50;
+      /* Posição ajustada dinamicamente no JS */
     }
 
     #message-finish {
@@ -134,7 +123,7 @@
       opacity: 0;
       pointer-events: none;
       user-select: none;
-      z-index: 30;
+      z-index: 60;
       transition: opacity 0.5s ease-in-out;
     }
 
@@ -143,21 +132,18 @@
       pointer-events: auto;
     }
 
-    /* Controles para celular: escondidos por padrão */
     #controls {
       display: none;
       position: fixed;
       bottom: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 40;
+      right: 20px;
+      z-index: 100;
       user-select: none;
-      text-align: center;
     }
 
     #controls button {
       font-size: 1.8em;
-      margin: 5px 8px;
+      margin: 5px;
       padding: 10px 15px;
       background: #8e24aa;
       border: none;
@@ -167,13 +153,14 @@
       cursor: pointer;
       user-select: none;
       transition: background-color 0.3s;
+      width: 50px;
+      height: 50px;
     }
 
     #controls button:active {
       background-color: #6a1b9a;
     }
 
-    /* Mostrar botões só em telas até 768px (celular) */
     @media (max-width: 768px) {
       #controls {
         display: block;
@@ -189,19 +176,17 @@
   </header>
 
   <nav class="navbar">
-    <a href="index.html" class="nav-link">Sobre nós</a>
+    <a href="#" class="nav-link">Sobre nós</a>
   </nav>
 
   <div id="start-line"></div>
-
   <div id="car">
-    <img src="fotos/carrao.png" alt="Carrinho de corrida" />
+    <img src="https://i.imgur.com/6nGz0Kj.png" alt="Carrinho de corrida" />
   </div>
 
   <div id="finish-line"></div>
   <div id="message-finish"></div>
 
-  <!-- Controles para celular -->
   <div id="controls">
     <button onclick="mover('up')">▲</button><br />
     <button onclick="mover('left')">◄</button>
@@ -215,10 +200,92 @@
     const start = document.getElementById('start-line');
     const message = document.getElementById('message-finish');
 
-    const carWidth = 60;
-    const carHeight = 60;
-    const velocidade = 5;
+    const velocidade = 10;
+    const carSize = 60;
 
+    // Ajusta a posição do start-line para ficar abaixo do header e nav
+    function ajustarPosicoes() {
+      const header = document.querySelector('header');
+      const nav = document.querySelector('nav.navbar');
+
+      const headerRect = header.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+
+      const topInicial = navRect.bottom + 20; // 20px de margem abaixo do nav
+
+      start.style.top = topInicial + 'px';
+      start.style.height = '80px';
+
+      // Atualiza posição inicial do carrinho
+      posX = start.getBoundingClientRect().left + start.offsetWidth / 2;
+      posY = topInicial + start.offsetHeight / 2;
+
+      atualizarPosicao();
+    }
+
+    // Posição inicial do carrinho
+    let posX = 0;
+    let posY = 0;
+
+    function atualizarPosicao() {
+      // Limite para o carrinho não passar do lado direito (evitando passar sobre botões)
+      let limiteDireito = window.innerWidth - 100; // 100px reservado para botões no celular
+
+      // Aplica limites nos eixos
+      posX = Math.min(limiteDireito, Math.max(0, posX));
+      posY = Math.min(window.innerHeight - carSize, Math.max( (start.getBoundingClientRect().bottom), posY));
+
+      car.style.left = (posX - carSize / 2) + 'px';
+      car.style.top = (posY - carSize / 2) + 'px';
+
+      checarChegada();
+    }
+
+    // Função para mover o carrinho
+    function mover(direcao) {
+      if (direcao === 'up') posY -= velocidade;
+      else if (direcao === 'down') posY += velocidade;
+      else if (direcao === 'left') posX -= velocidade;
+      else if (direcao === 'right') posX += velocidade;
+      atualizarPosicao();
+    }
+
+    // Teclado para desktop
+    let teclas = {ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false};
+
+    document.addEventListener('keydown', e => {
+      if (e.key in teclas) teclas[e.key] = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key in teclas) teclas[e.key] = false;
+    });
+
+    function moverComTeclado() {
+      if (teclas.ArrowUp) mover('up');
+      if (teclas.ArrowDown) mover('down');
+      if (teclas.ArrowLeft) mover('left');
+      if (teclas.ArrowRight) mover('right');
+      requestAnimationFrame(moverComTeclado);
+    }
+
+    // Checar se chegou na linha de chegada
+    function checarChegada() {
+      const finishRect = finish.getBoundingClientRect();
+      const carRect = car.getBoundingClientRect();
+
+      if (
+        carRect.left + carRect.width / 2 >= finishRect.left &&
+        carRect.left + carRect.width / 2 <= finishRect.right &&
+        carRect.top + carRect.height / 2 >= finishRect.top &&
+        carRect.top + carRect.height / 2 <= finishRect.bottom
+      ) {
+        mostrarMensagem();
+      } else {
+        esconderMensagem();
+      }
+    }
+
+    let ultimaMensagem = -1;
     const cupons = [
       "Vale um cinema! 🍿",
       "Vale um lanche! 🍔",
@@ -227,152 +294,28 @@
       "Vale uma massagem relaxante! 💆‍♀️",
       "Vale um passeio surpresa! 🚗",
       "Vale um café especial! ☕",
-      "Vale uma noite de filme juntos! 🎬",
-      "Vale um pacote de Lay's 😋",
-      "Vale uma partida de Brawl Stars 🎮",
-      "Vale um beijo 😘",
-      "Vale uma barra de Sonho de Valsa 🍫",
-      "Vale qualquer coisa que você quiser fazer ✨"
+      "Vale uma noite de filme juntos! 🎬"
     ];
 
-    let ultimoCupomIndex = -1;
-    let mostrandoMensagem = false;
-    let dentroDaLinha = false;
-
-    // Posição inicial (relacionada à linha de partida)
-    let startRect = start.getBoundingClientRect();
-    let posX = startRect.left + startRect.width / 2;
-    let posY = startRect.top + startRect.height / 2;
-
-    // Define limite superior para o carrinho não passar para o header/nav
-    const limiteSuperior = startRect.bottom + 20;
-
-    let teclas = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-
-    function atualizarPosicao() {
-      // Ajusta limite direito para celular, para não passar sobre os botões
-      let limiteDireito = window.innerWidth - carWidth / 2;
-      if (window.innerWidth <= 768) {
-        limiteDireito = window.innerWidth - 150; // reserva 150px para botões
-      }
-
-      const x = Math.min(limiteDireito, Math.max(carWidth / 2, posX));
-      const y = Math.min(window.innerHeight - carHeight / 2, Math.max(limiteSuperior, posY));
-
-      car.style.left = (x - carWidth / 2) + 'px';
-      car.style.top = (y - carHeight / 2) + 'px';
-
-      checkFinish(x, y);
+    function mostrarMensagem() {
+      let novoIndex;
+      do {
+        novoIndex = Math.floor(Math.random() * cupons.length);
+      } while (novoIndex === ultimaMensagem);
+      ultimaMensagem = novoIndex;
+      message.textContent = cupons[novoIndex];
+      message.classList.add('show');
     }
 
-    // Função para mover via botões no celular
-    function mover(direcao) {
-      if (direcao === 'up') posY -= velocidade;
-      if (direcao === 'down') posY += velocidade;
-      if (direcao === 'left') posX -= velocidade;
-      if (direcao === 'right') posX += velocidade;
-      atualizarPosicao();
-    }
-
-    // Movimento via teclado para desktop
-    document.addEventListener('keydown', e => {
-      if (e.key in teclas) teclas[e.key] = true;
-    });
-
-    document.addEventListener('keyup', e => {
-      if (e.key in teclas) teclas[e.key] = false;
-    });
-
-    function moverComTeclado() {
-      if (teclas.ArrowUp) posY -= velocidade;
-      if (teclas.ArrowDown) posY += velocidade;
-      if (teclas.ArrowLeft) posX -= velocidade;
-      if (teclas.ArrowRight) posX += velocidade;
-
-      atualizarPosicao();
-      requestAnimationFrame(moverComTeclado);
-    }
-
-    function checkFinish(x, y) {
-      const rect = finish.getBoundingClientRect();
-      const centroX = x;
-      const centroY = y;
-
-      const estaNaLinha = (
-        centroX >= rect.left &&
-        centroX <= rect.right &&
-        centroY >= rect.top &&
-        centroY <= rect.bottom
-      );
-
-      if (estaNaLinha && !dentroDaLinha) {
-        dentroDaLinha = true;
-        showMessage();
-      } else if (!estaNaLinha && dentroDaLinha) {
-        dentroDaLinha = false;
-        hideMessage();
-        resetarPosicao();
-      }
-    }
-
-    function showMessage() {
-      mostrandoMensagem = true;
-      setTimeout(() => {
-        let novoIndex;
-        do {
-          novoIndex = Math.floor(Math.random() * cupons.length);
-        } while (novoIndex === ultimoCupomIndex);
-        ultimoCupomIndex = novoIndex;
-        message.textContent = cupons[novoIndex];
-        message.classList.add('show');
-      }, 300);
-    }
-
-    function hideMessage() {
-      mostrandoMensagem = false;
+    function esconderMensagem() {
       message.classList.remove('show');
     }
 
-    function resetarPosicao() {
-      startRect = start.getBoundingClientRect();
-      posX = startRect.left + startRect.width / 2;
-      posY = startRect.top + startRect.height / 2;
-      atualizarPosicao();
-    }
-
-    window.addEventListener('resize', () => {
-      startRect = start.getBoundingClientRect();
-      posX = startRect.left + startRect.width / 2;
-      posY = startRect.top + startRect.height / 2;
-      atualizarPosicao();
+    window.addEventListener('resize', ajustarPosicoes);
+    window.addEventListener('load', () => {
+      ajustarPosicoes();
+      moverComTeclado();
     });
-
-    // Controle por gesto no celular
-    let toqueInicialX = 0;
-    let toqueInicialY = 0;
-
-    document.addEventListener("touchstart", function (e) {
-      const toque = e.touches[0];
-      toqueInicialX = toque.clientX;
-      toqueInicialY = toque.clientY;
-    }, false);
-
-    document.addEventListener("touchend", function (e) {
-      const toque = e.changedTouches[0];
-      const deltaX = toque.clientX - toqueInicialX;
-      const deltaY = toque.clientY - toqueInicialY;
-
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (deltaX > 30) mover('right');
-        else if (deltaX < -30) mover('left');
-      } else {
-        if (deltaY > 30) mover('down');
-        else if (deltaY < -30) mover('up');
-      }
-    }, false);
-
-    atualizarPosicao();
-    moverComTeclado();
   </script>
 
 </body>
